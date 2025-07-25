@@ -1,0 +1,1017 @@
+openapi: 3.0.0
+info:
+  title: Sweet Sprouts API
+  description: 赤ちゃんのお世話を記録・管理するためのWebサービス「Sweet Sprouts」のAPI仕様書です。
+  version: 1.0.0
+servers:
+  - url: https://api.sweetsprouts.com # 本番環境のURL (仮)
+    description: Production server
+  - url: http://localhost:3000 # 開発環境のURL
+    description: Development server
+
+security:
+  - bearerAuth: [] # 全てのパスにBearerトークン認証をデフォルトで適用
+
+tags:
+  - name: Authentication
+    description: ユーザー認証とセッション管理
+  - name: Users
+    description: ユーザー情報管理
+  - name: Children
+    description: お子さん情報管理
+  - name: Records
+    description: 育児記録（授乳、排泄など）管理
+
+paths:
+  /auth/register:
+    post:
+      summary: 新規ユーザー登録
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: ユーザー登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: メールアドレスが既に登録済み
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      summary: ユーザーログイン
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /auth/refresh-token:
+    post:
+      summary: アクセストークン再発行
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: アクセストークン再発行成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /auth/me:
+    get:
+      summary: 認証済みユーザー情報取得
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: ユーザー情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: ユーザーID
+    get:
+      summary: 特定ユーザー情報取得
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: ユーザー情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: 特定ユーザー情報更新
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+      responses:
+        "200":
+          description: ユーザー情報更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: 特定ユーザー削除
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: ユーザー削除成功 (No Content)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /children:
+    post:
+      summary: 新しいお子さん情報登録
+      tags:
+        - Children
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildCreateRequest"
+      responses:
+        "201":
+          description: お子さん情報登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    get:
+      summary: 全お子さん情報取得 (ログインユーザーに紐づく)
+      tags:
+        - Children
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: お子さん情報一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChildResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /children/{childId}:
+    parameters:
+      - name: childId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: お子さんID
+    get:
+      summary: 特定のお子さん情報取得
+      tags:
+        - Children
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: お子さん情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: 特定のお子さん情報更新
+      tags:
+        - Children
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildUpdateRequest"
+      responses:
+        "200":
+          description: お子さん情報更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChildResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: 特定のお子さん情報削除
+      tags:
+        - Children
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: お子さん情報削除成功 (No Content)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /records:
+    post:
+      summary: 新しい育児記録登録
+      tags:
+        - Records
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordCreateRequest"
+      responses:
+        "201":
+          description: 育児記録登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    get:
+      summary: 育児記録一覧取得 (絞り込み・ページネーション)
+      tags:
+        - Records
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: childId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: 記録を取得するお子さんのID
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [FEEDING, DIAPER]
+          description: 記録の種類でフィルタリング
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 検索開始日 (YYYY-MM-DD)
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 検索終了日 (YYYY-MM-DD)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 取得件数
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: オフセット
+      responses:
+        "200":
+          description: 育児記録一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecordResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /records/{recordId}:
+    parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: 記録ID
+    get:
+      summary: 特定の育児記録詳細取得
+      tags:
+        - Records
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 育児記録詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      summary: 特定の育児記録更新
+      tags:
+        - Records
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordUpdateRequest"
+      responses:
+        "200":
+          description: 育児記録更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      summary: 特定の育児記録削除
+      tags:
+        - Records
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: 育児記録削除成功 (No Content)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # 共通スキーマ
+    ErrorResponse:
+      type: object
+      required:
+        - statusCode
+        - message
+      properties:
+        statusCode:
+          type: integer
+          description: HTTPステータスコード
+          example: 400
+        message:
+          type: string
+          description: エラーメッセージ
+          example: "Invalid input data"
+        details:
+          type: array
+          description: 詳細なエラー情報 (バリデーションエラーなど)
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: エラーが発生したフィールド名
+                example: "email"
+              message:
+                type: string
+                description: フィールド固有のエラーメッセージ
+                example: "Invalid email format"
+    Timestamp:
+      type: string
+      format: date-time
+      description: ISO 8601形式のタイムスタンプ (YYYY-MM-DDTHH:MM:SSZ)
+
+    # 認証関連スキーマ
+    AuthSuccessResponse:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+      properties:
+        accessToken:
+          type: string
+          description: 認証に使用するJWTアクセストークン
+          example: "eyJ..."
+        refreshToken:
+          type: string
+          description: アクセストークン再発行に使用するJWTリフレッシュトークン
+          example: "eyJ..."
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          example: "password123"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          example: "password123"
+
+    LoginSuccessResponse:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/AuthSuccessResponse"
+        - type: object
+          required:
+            - user
+          properties:
+            user:
+              $ref: "#/components/schemas/UserResponse"
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: リフレッシュトークン
+          example: "eyJ..."
+
+    # ユーザー関連スキーマ
+    UserResponse:
+      type: object
+      required:
+        - id
+        - email
+        - role
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        role:
+          type: string
+          enum: [ADMIN, GUARDIAN, VIEWER]
+          example: "GUARDIAN"
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+        updatedAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "new_email@example.com"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+          example: "new_password123"
+        role:
+          type: string
+          enum: [ADMIN, GUARDIAN, VIEWER]
+          description: ADMINのみが変更可能
+          example: "VIEWER"
+
+    # お子さん関連スキーマ
+    ChildResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - name
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        userId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "たろう"
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+          example: "2024-01-15"
+        gender:
+          type: string
+          enum: [MALE, FEMALE, UNKNOWN]
+          nullable: true
+          example: "MALE"
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+        updatedAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    ChildCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: "はなこ"
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+          description: YYYY-MM-DD 形式
+          example: "2024-03-20"
+        gender:
+          type: string
+          enum: [MALE, FEMALE, UNKNOWN]
+          nullable: true
+          example: "FEMALE"
+
+    ChildUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: "はなこ"
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+          description: YYYY-MM-DD 形式
+          example: "2024-03-20"
+        gender:
+          type: string
+          enum: [MALE, FEMALE, UNKNOWN]
+          nullable: true
+          example: "FEMALE"
+
+    # 記録関連スキーマ
+    RecordResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - childId
+        - type
+        - time
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174002"
+        userId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        childId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        type:
+          type: string
+          enum: [FEEDING, DIAPER]
+          example: "FEEDING"
+        time:
+          $ref: "#/components/schemas/Timestamp"
+          description: 記録の開始時刻 (授乳の場合)
+        memo:
+          type: string
+          maxLength: 200
+          nullable: true
+          example: "今日はよく飲んだ"
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+        updatedAt:
+          $ref: "#/components/schemas/Timestamp"
+        details:
+          oneOf:
+            - $ref: "#/components/schemas/FeedingDetailResponse"
+            - $ref: "#/components/schemas/DiaperDetailResponse"
+          description: 記録タイプに応じた詳細情報
+
+    RecordCreateRequest:
+      type: object
+      required:
+        - childId
+        - type
+        - time
+      properties:
+        childId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        type:
+          type: string
+          enum: [FEEDING, DIAPER]
+          example: "FEEDING"
+        time:
+          $ref: "#/components/schemas/Timestamp"
+          description: 記録の開始時刻 (授乳の場合)
+        memo:
+          type: string
+          maxLength: 200
+          nullable: true
+          example: "今日はよく飲んだ"
+        feedingDetails:
+          $ref: "#/components/schemas/FeedingDetailCreateRequest"
+          description: "typeがFEEDINGの場合に必須"
+        diaperDetails:
+          $ref: "#/components/schemas/DiaperDetailCreateRequest"
+          description: "typeがDIAPERの場合に必須"
+      # oneOfは、いずれかのスキーマに一致することを示す
+      # anyOfは、いずれかのスキーマに一致するが、全てに一致してもよいことを示す
+      # allOfは、全てのスキーマに一致することを示す
+      oneOf:
+        - required: [feedingDetails]
+          properties:
+            type: { enum: [FEEDING] }
+        - required: [diaperDetails]
+          properties:
+            type: { enum: [DIAPER] }
+
+    RecordUpdateRequest:
+      type: object
+      properties:
+        childId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174001"
+        type:
+          type: string
+          enum: [FEEDING, DIAPER]
+          description: レコードタイプは変更不可
+          readOnly: true
+          example: "FEEDING"
+        time:
+          $ref: "#/components/schemas/Timestamp"
+          description: 記録の開始時刻 (授乳の場合)
+        memo:
+          type: string
+          maxLength: 200
+          nullable: true
+          example: "今日はよく飲んだ"
+        feedingDetails:
+          $ref: "#/components/schemas/FeedingDetailUpdateRequest"
+          description: "typeがFEEDINGの場合に更新可能"
+        diaperDetails:
+          $ref: "#/components/schemas/DiaperDetailUpdateRequest"
+          description: "typeがDIAPERの場合に更新可能"
+      # oneOfは、いずれかのスキーマに一致することを示す
+      # anyOfは、いずれかのスキーマに一致するが、全てに一致してもよいことを示す
+      # allOfは、全てのスキーマに一致することを示す
+      oneOf:
+        - required: [type] # typeの指定がない場合はいずれの詳細も更新しない
+        - required: [feedingDetails]
+          properties:
+            type: { enum: [FEEDING] }
+        - required: [diaperDetails]
+          properties:
+            type: { enum: [DIAPER] }
+
+    # 授乳記録詳細スキーマ
+    FeedingDetailResponse:
+      type: object
+      required:
+        - id
+        - recordId
+        - feedingMethod
+        - endTime
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a23e4567-e89b-12d3-a456-426614174003"
+        recordId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174002"
+        feedingMethod:
+          type: string
+          enum: [DIRECT_BREAST, PUMPED_BREAST, FORMULA]
+          example: "DIRECT_BREAST"
+        breastSide:
+          type: string
+          enum: [LEFT, RIGHT, BOTH]
+          nullable: true
+          example: "LEFT"
+        amountMl:
+          type: integer
+          minimum: 0
+          nullable: true
+          example: 120
+        endTime:
+          $ref: "#/components/schemas/Timestamp"
+          description: 授乳記録の終了時刻
+
+    FeedingDetailCreateRequest:
+      type: object
+      required:
+        - feedingMethod
+        - endTime
+      properties:
+        feedingMethod:
+          type: string
+          enum: [DIRECT_BREAST, PUMPED_BREAST, FORMULA]
+          example: "DIRECT_BREAST"
+        breastSide:
+          type: string
+          enum: [LEFT, RIGHT, BOTH]
+          nullable: true
+          description: "feedingMethodがDIRECT_BREASTの場合に考慮"
+          example: "LEFT"
+        amountMl:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: "feedingMethodがPUMPED_BREASTまたはFORMULAの場合に考慮"
+          example: 120
+        endTime:
+          $ref: "#/components/schemas/Timestamp"
+          description: 授乳記録の終了時刻。`Record.time` (開始時刻) より後であること。
+      oneOf:
+        - required: [breastSide]
+          properties:
+            feedingMethod: { enum: [DIRECT_BREAST] }
+            amountMl: { nullable: true } # 直接授乳では量指定は不要
+        - required: [amountMl]
+          properties:
+            feedingMethod: { enum: [PUMPED_BREAST, FORMULA] }
+            breastSide: { nullable: true } # 量指定では左右は不要
+        - properties: # どちらも不要な場合のデフォルト
+            feedingMethod: {}
+            breastSide: { nullable: true }
+            amountMl: { nullable: true }
+
+    FeedingDetailUpdateRequest:
+      type: object
+      properties:
+        feedingMethod:
+          type: string
+          enum: [DIRECT_BREAST, PUMPED_BREAST, FORMULA]
+          example: "DIRECT_BREAST"
+        breastSide:
+          type: string
+          enum: [LEFT, RIGHT, BOTH]
+          nullable: true
+          description: "feedingMethodがDIRECT_BREASTの場合に考慮"
+          example: "LEFT"
+        amountMl:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: "feedingMethodがPUMPED_BREASTまたはFORMULAの場合に考慮"
+          example: 120
+        endTime:
+          $ref: "#/components/schemas/Timestamp"
+          description: 授乳記録の終了時刻。`Record.time` (開始時刻) より後であること。
+      oneOf: # 更新時のバリデーションは柔軟に
+        - properties: {} # 何も更新しない場合
+        - required: [feedingMethod]
+          properties:
+            # feedingMethodが変更された場合に、breastSide/amountMlの整合性をチェック
+            feedingMethod: { enum: [DIRECT_BREAST] }
+            amountMl: { nullable: true }
+        - required: [feedingMethod]
+          properties:
+            feedingMethod: { enum: [PUMPED_BREAST, FORMULA] }
+            breastSide: { nullable: true }
+        - required: [breastSide] # breastSideのみ更新する場合
+        - required: [amountMl] # amountMlのみ更新する場合
+        - required: [endTime] # endTimeのみ更新する場合
+
+    # 排泄記録詳細スキーマ
+    DiaperDetailResponse:
+      type: object
+      required:
+        - id
+        - recordId
+        - diaperType
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "b23e4567-e89b-12d3-a456-426614174004"
+        recordId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174002"
+        diaperType:
+          type: string
+          enum: [POOP, PEE]
+          example: "POOP"
+        poopConsistency:
+          type: string
+          enum: [SOLID, LOOSE, DIARRHEA, OTHER]
+          nullable: true
+          example: "LOOSE"
+
+    DiaperDetailCreateRequest:
+      type: object
+      required:
+        - diaperType
+      properties:
+        diaperType:
+          type: string
+          enum: [POOP, PEE]
+          example: "POOP"
+        poopConsistency:
+          type: string
+          enum: [SOLID, LOOSE, DIARRHEA, OTHER]
+          nullable: true
+          description: "diaperTypeがPOOPの場合に考慮"
+          example: "SOLID"
+      oneOf:
+        - required: [poopConsistency]
+          properties:
+            diaperType: { enum: [POOP] }
+        - properties:
+            diaperType: { enum: [PEE] }
+            poopConsistency: { nullable: true } # おしっこでは状態は不要
+
+    DiaperDetailUpdateRequest:
+      type: object
+      properties:
+        diaperType:
+          type: string
+          enum: [POOP, PEE]
+          example: "POOP"
+        poopConsistency:
+          type: string
+          enum: [SOLID, LOOSE, DIARRHEA, OTHER]
+          nullable: true
+          description: "diaperTypeがPOOPの場合に考慮"
+          example: "SOLID"
+      oneOf: # 更新時のバリデーションは柔軟に
+        - properties: {} # 何も更新しない場合
+        - required: [diaperType] # diaperTypeのみ更新する場合
+        - required: [poopConsistency] # poopConsistencyのみ更新する場合
+
+  responses:
+    BadRequest:
+      description: 不正なリクエスト (バリデーションエラーなど)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: 認証失敗 (無効なトークン、トークンなしなど)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: 権限なし (認証済みだがアクセスが許可されない)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: リソースが見つからない
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

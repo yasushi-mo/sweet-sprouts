@@ -4,12 +4,171 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+// Prisma Clientを生成するための設定
+// JavaScript/TypeScriptでPrisma Clientを生成する
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
+// データベース接続設定
+// postgresql をプロバイダとし、接続URLは .env ファイルから DATABASE_URL 環境変数を読み込む
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// User (ユーザー情報)
+// システムを利用するユーザーの基本情報を格納します。
+// ユーザーの役割を定義する role カラムを含みます。
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique // ユーザーのメールアドレス（ログイン用）
+  passwordHash String    // パスワードのハッシュ値
+  name         String    // ユーザー名
+  role         UserRole  @default(GUARDIAN) // ユーザーの役割 (ADMIN, GUARDIAN, VIEWER)
+  children     Child[]   // このユーザーが登録したお子さんのリスト
+  records      Record[]  // このユーザーが作成した育児記録のリスト
+  createdAt    DateTime  @default(now()) // レコード作成日時
+  updatedAt    DateTime  @updatedAt // レコード最終更新日時
+
+  @@map("users") // データベース上のテーブル名を "users" にマッピング
+}
+
+// ユーザーの役割を表すEnum
+enum UserRole {
+  ADMIN    // 管理者
+  GUARDIAN // 保護者（デフォルト）
+  VIEWER   // 閲覧者
+}
+
+// Child (お子さん情報)
+// 複数のお子さんを管理するためのテーブルです。各お子さんは1人のユーザーに紐づきます。
+model Child {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id") // このお子さんを登録したユーザーの ID (User.id への外部キー)
+  name        String    // お子さんの名前
+  dateOfBirth DateTime  @db.Date // 生年月日（日付のみ利用）
+  gender      Gender    // 性別 (MALE, FEMALE, UNKNOWNなどを想定)
+  records     Record[]  // このお子さんに関する育児記録のリスト
+  createdAt   DateTime  @default(now()) // レコード作成日時
+  updatedAt   DateTime  @updatedAt // レコード最終更新日時
+
+  user        User      @relation(fields: [userId], references: [id]) // Userモデルへのリレーション
+
+  @@map("children") // データベース上のテーブル名を "children" にマッピング
+}
+
+// 性別を表すEnum
+enum Gender {
+  MALE    // 男性
+  FEMALE  // 女性
+  UNKNOWN // 不明
+}
+
+// Record (記録の共通情報)
+// 授乳記録と排泄記録に共通する情報を格納します。特定のお子さん (childId) に紐づきます。
+model Record {
+  id           String         @id @default(uuid())
+  userId       String         @map("user_id") // 記録を作成したユーザーの ID (User.id への外部キー)
+  childId      String         @map("child_id") // この記録が紐づくお子さんの ID (Child.id への外部キー)
+  type         RecordType     // 記録の種類 (FEEDING, DIAPERなど)
+  startTime    DateTime       // 記録発生時刻 (授乳の場合は開始時刻)
+  notes        String?        @db.Text // 記録に関する自由なメモ
+
+  user         User           @relation(fields: [userId], references: [id]) // Userモデルへのリレーション
+  child        Child          @relation(fields: [childId], references: [id]) // Childモデルへのリレーション
+  feedingDetail FeedingDetail? // 1対1リレーション: FeedingDetail への関連
+  diaperDetail  DiaperDetail?  // 1対1リレーション: DiaperDetail への関連
+
+  createdAt    DateTime       @default(now()) // レコード作成日時
+  updatedAt    DateTime       @updatedAt // レコード最終更新日時
+
+  @@map("records") // データベース上のテーブル名を "records" にマッピング
+}
+
+// 育児記録の種類を表すEnum
+enum RecordType {
+  FEEDING  // 授乳
+  DIAPER   // おむつ
+  SLEEP    // 睡眠
+  BATH     // 入浴
+  MEDICINE // 投薬
+  WALK     // 散歩
+  OTHER    // その他
+}
+
+
+// FeedingDetail (授乳記録の詳細情報)
+// 授乳記録に特化した詳細情報を格納します。Record テーブルの time を開始時刻とし、別途 endTime を持ちます。
+model FeedingDetail {
+  id            String         @id @default(uuid())
+  recordId      String         @unique @map("record_id") // 関連する Record.id への外部キー
+  feedingMethod FeedingMethod  @map("feeding_method") // 授乳方法 (DIRECT_BREAST, PUMPED_BREAST, FORMULA)
+  breastSide    BreastSide?    @map("breast_side") // 直接授乳の左右 (LEFT, RIGHT, BOTH)
+  amountMl      Int?           @map("amount_ml") // ミルク/搾乳の量 (ml)
+  endTime       DateTime       @map("end_time") // 授乳記録の終了時刻
+
+  record        Record         @relation(fields: [recordId], references: [id], onDelete: Cascade) // Recordモデルへの1対1リレーション
+
+  createdAt     DateTime       @default(now()) // レコード作成日時
+  updatedAt     DateTime       @updatedAt // レコード最終更新日時
+
+  @@map("feeding_details") // データベース上のテーブル名を "feeding_details" にマッピング
+}
+
+// 授乳方法を表すEnum
+enum FeedingMethod {
+  DIRECT_BREAST // 直接授乳
+  PUMPED_BREAST // 搾乳
+  FORMULA       // 粉ミルク
+}
+
+// 直接授乳の左右を表すEnum
+enum BreastSide {
+  LEFT  // 左
+  RIGHT // 右
+  BOTH  // 両方
+}
+
+
+// DiaperDetail (排泄記録の詳細情報)
+// 排泄記録に特化した詳細情報を格納します。
+model DiaperDetail {
+  id              String         @id @default(uuid())
+  recordId        String         @unique @map("record_id") // 関連する Record.id への外部キー
+  diaperType      DiaperType     @map("diaper_type") // 排泄の種類 (POOP, PEE)
+  poopConsistency PoopConsistency? @map("poop_consistency") // うんちの状態 (SOLID, LOOSE, DIARRHEA, OTHER)
+  poopColor       PoopColor?     @map("poop_color") // うんちの色 (BLACK, GREEN, YELLOW, BROWN, RED, WHITE, OTHER)
+
+  record          Record         @relation(fields: [recordId], references: [id], onDelete: Cascade) // Recordモデルへの1対1リレーション
+
+  createdAt       DateTime       @default(now()) // レコード作成日時
+  updatedAt       DateTime       @updatedAt // レコード最終更新日時
+
+  @@map("diaper_details") // データベース上のテーブル名を "diaper_details" にマッピング
+}
+
+// 排泄の種類を表すEnum
+enum DiaperType {
+  POOP // うんち
+  PEE  // おしっこ
+}
+
+// うんちの状態を表すEnum
+enum PoopConsistency {
+  SOLID     // 硬い
+  LOOSE     // ゆるい
+  DIARRHEA  // 下痢
+  OTHER     // その他
+}
+
+// うんちの色を表すEnum
+enum PoopColor {
+  BLACK // 黒色 (新生児の胎便や、鉄剤服用時など)
+  GREEN // 緑色 (消化が早い、離乳食の影響など)
+  YELLOW // 黄色 (健康な母乳・ミルク便)
+  BROWN // 茶色 (健康な離乳食後の便)
+  RED // 赤色 (血液の混入など、要医療機関受診)
+  WHITE // 白色 / 灰色 (胆道閉鎖症など、要医療機関受診)
+  OTHER // その他
 }

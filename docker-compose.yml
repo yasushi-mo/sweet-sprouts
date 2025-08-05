@@ -1,24 +1,15 @@
 services:
-  # データベースサービス
   db:
-    # PostgreSQL 17の軽量版イメージ
-    image: postgres:17-alpine
-    # コンテナ停止時の再起動ポリシー
-    # always は、Dockerデーモンが起動していれば常に再起動を試みる
-    restart: always
-    # コンテナ内の環境変数
+    container_name: sweet-sprouts-db
+    image: postgres:17.5-alpine3.22
     environment:
-      POSTGRES_USER: ${DB_USER:-user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
-      POSTGRES_DB: ${DB_NAME:-sweet_sprouts_db}
-    # ホストとコンテナのポートマッピング
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
-    # データ永続化のためのボリューム
-    # Docker Composeファイル内で定義する名前付きボリュームとPostgreSQLがデータを保存するコンテナ内部のパスを指定
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - sweet-sprouts-db-volume:/var/lib/postgresql/data
 
-# Docker Composeファイル内で使用する名名前付きボリュームの定義
 volumes:
-  db_data:
+  sweet-sprouts-db-volume:

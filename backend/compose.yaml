@@ -1,0 +1,50 @@
+services:
+  backend:
+    container_name: sweet-sprouts-backend
+    # コンテナイメージの作成元を指定。`backend` ディレクトリ内の `Dockerfile` を使ってビルド
+    build: .
+    # ポートフォワーディング。ホストOSのポート3000へのアクセスを、コンテナのポート3000に転送する。
+    # ブラウザからアプリケーションにアクセスするために必要。
+    ports:
+      - "3000:3000"
+    # ホストOSの現在のディレクトリ（`.`）を、コンテナ内の `/app` ディレクトリに同期させる
+    # ホスト側でコードを変更すると、コンテナ内にも反映される
+    volumes:
+      - .:/app
+    # ホストOSにある `.env` ファイルの内容を、コンテナ内の環境変数として読み込む
+    # データベース接続情報（DATABASE_URL）などがコンテナ内で利用可能になる
+    env_file:
+      - ./.env
+    # コンテナの作業ディレクトリを指定
+    # `npm install` や `npx prisma` などのコマンドがこのディレクトリで実行される
+    working_dir: /app
+    # 依存関係を指定
+    # `db` サービスが完全に起動してから、`backend` サービスを起動する
+    depends_on:
+      - db
+    # コンテナを終了させずに常駐させるためのコマンド
+    # `docker compose exec` でコマンドを実行できるようにするための一時的な設定
+    # TODO: 将来的にアプリケーションを起動するコマンド（`npm start` など）に置き換えられる
+    command: ["tail", "-f", "/dev/null"]
+
+  db:
+    container_name: sweet-sprouts-db
+    image: postgres:17.5-alpine3.22
+    # 外部からのアクセスを可能にするため、ホストOSのポート5432をコンテナのポート5432に転送する
+    # 外部のDBクライアントツールからデータベースに直接接続するために必要
+    ports:
+      - "5432:5432"
+    # コンテナ起動時、以下の環境変数がPostgreSQLのユーザー、パスワード、データベースとして設定
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # 名前付きボリューム`sweet-sprouts-db-volume`をコンテナのデータ保存領域にマウントする
+    # コンテナを再起動してもデータベースのデータが永続化される
+    volumes:
+      - sweet-sprouts-db-volume:/var/lib/postgresql/data
+
+# 名前付きボリュームの定義
+# データベースのデータを永続化するために使用
+volumes:
+  sweet-sprouts-db-volume:

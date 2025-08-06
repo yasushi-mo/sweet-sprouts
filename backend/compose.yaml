@@ -22,6 +22,9 @@ services:
     # `db` サービスが完全に起動してから、`backend` サービスを起動する
     depends_on:
       - db
+    # サービス間の通信を可能にするネットワークを指定。
+    networks:
+      - sweet-sprouts-network
     # コンテナを終了させずに常駐させるためのコマンド
     # `docker compose exec` でコマンドを実行できるようにするための一時的な設定
     # TODO: 将来的にアプリケーションを起動するコマンド（`npm start` など）に置き換えられる
@@ -43,8 +46,17 @@ services:
     # コンテナを再起動してもデータベースのデータが永続化される
     volumes:
       - sweet-sprouts-db-volume:/var/lib/postgresql/data
+    # サービス間の通信を可能にするネットワーク
+    networks:
+      - sweet-sprouts-network
 
 # 名前付きボリュームの定義
 # データベースのデータを永続化するために使用
 volumes:
   sweet-sprouts-db-volume:
+
+# ネットワークの定義
+# 明示的に定義することで、他のプロジェクトと分離し、管理しやすくする
+networks:
+  sweet-sprouts-network:
+    driver: bridge

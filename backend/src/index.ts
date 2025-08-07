@@ -1,30 +1,29 @@
+import express from "express";
 import prisma from "@/lib/prisma";
 
-const main = async () => {
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(express.json());
+
+app.post("/users", async (req, res) => {
+  const { email, passwordHash, name } = req.body;
+
   try {
-    console.log("Create a user...");
-    const user = await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
-        email: "test@example.com",
-        passwordHash: "hashed_password_for_test",
-        name: "Test User",
+        email,
+        passwordHash,
+        name,
       },
     });
-    console.log("a user has been created:", user);
-
-    const fetchedUser = await prisma.user.findUnique({
-      where: {
-        id: user.id,
-      },
-    });
-    console.log("ユーザーが見つかりました:", fetchedUser);
+    res.status(201).json(newUser);
   } catch (error) {
-    console.error("エラーが発生しました:", error);
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
-    console.log("データベース接続を切断しました。");
+    console.error(error);
+    res.status(500).json({ error: "Failed to create user" });
   }
-};
+});
 
-main();
+app.listen(port, () => {
+  console.log(`Backend server running on http://localhost:${port}`);
+});

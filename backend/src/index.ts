@@ -6,6 +6,7 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Users ユーザー情報管理
 app.post("/users", async (req, res) => {
   const { email, passwordHash, name } = req.body;
 
@@ -21,6 +22,26 @@ app.post("/users", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to create user" });
+  }
+});
+
+// 特定ユーザー情報取得
+app.get("/users/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch user" });
   }
 });
 

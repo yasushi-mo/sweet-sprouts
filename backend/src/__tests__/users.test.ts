@@ -1,6 +1,6 @@
 import supertest from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import prisma from "@/lib/prisma";
+import prisma from "@/libs/prisma";
 import app from "@/index";
 import { User } from "@prisma/client";
 

@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import prisma from "@/lib/prisma";
+import prisma from "@/libs/prisma";
 import { User } from "@prisma/client";
 import { GetUserRequestParams, GetUserResponse } from "./types";
 

@@ -27,3 +27,5 @@ app.post("/users", async (req, res) => {
 app.listen(port, () => {
   console.log(`Backend server running on http://localhost:${port}`);
 });
+
+export default app;

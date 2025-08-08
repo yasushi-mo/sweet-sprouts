@@ -2,11 +2,12 @@ import supertest from "supertest";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import prisma from "@/lib/prisma";
 import app from "@/index";
+import { User } from "@prisma/client";
 
 const request = supertest(app);
 
 describe("User API", () => {
-  let testUser: any; // NOTE: 型を厳密にするには、Prismaの型をインポートします
+  let testUser: User;
 
   // 全てのテストが実行される前に1回だけ実行
   beforeAll(async () => {

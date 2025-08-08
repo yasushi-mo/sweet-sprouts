@@ -1,14 +1,15 @@
 import express, { Request, Response } from "express";
 import prisma from "@/libs/prisma";
 import { User } from "@prisma/client";
-import { GetUserRequestParams, GetUserResponse } from "./types";
+import { ErrorResponse, GetUserRequestParams, GetUserResponse } from "@/types";
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Users ユーザー情報管理
+// [Authentication] ユーザー認証とセッション管理
+// 新規ユーザー登録
 app.post("/users", async (req, res) => {
   const { email, passwordHash, name } = req.body;
 
@@ -27,12 +28,13 @@ app.post("/users", async (req, res) => {
   }
 });
 
+// [Users] ユーザー情報管理
 // 特定ユーザー情報取得
 app.get(
   "/users/:id",
   async (
     req: Request<GetUserRequestParams>,
-    res: Response<GetUserResponse>
+    res: Response<GetUserResponse | ErrorResponse>
   ) => {
     const { id } = req.params;
 

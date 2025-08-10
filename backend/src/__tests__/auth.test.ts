@@ -6,18 +6,17 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 const request = supertest(app);
 
 describe("[Authentication] ユーザー認証とセッション管理", () => {
-  // 全てのテストが実行される前に1回だけ実行
   beforeAll(async () => {
-    await prisma.user.deleteMany({});
+    await prisma.user.deleteMany();
   });
 
-  // 全てのテストが実行された後に1回だけ実行
   afterAll(async () => {
+    await prisma.user.deleteMany();
     await prisma.$disconnect();
   });
 
   describe("新規ユーザー登録", () => {
-    it("should create a new user and return 201 status", async () => {
+    it("新しいユーザーを作成し、201ステータスを返す", async () => {
       const response = await request.post("/auth/register").send({
         email: "testuser@example.com",
         password: "password123",
@@ -30,7 +29,7 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
       expect(response.body).not.toHaveProperty("passwordHash");
     });
 
-    it("should return 409 status if email already exists", async () => {
+    it("メールアドレスがすでに存在する場合、409ステータスを返す", async () => {
       // 事前にユーザーを作成
       await request.post("/auth/register").send({
         email: "existing@example.com",

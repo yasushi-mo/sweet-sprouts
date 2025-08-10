@@ -40,7 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthSuccessResponse"
+                $ref: "#/components/schemas/RegisterSuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "409":
@@ -469,13 +469,8 @@ components:
     ErrorResponse:
       type: object
       required:
-        - statusCode
         - message
       properties:
-        statusCode:
-          type: integer
-          description: HTTPステータスコード
-          example: 400
         message:
           type: string
           description: エラーメッセージ
@@ -520,6 +515,7 @@ components:
       required:
         - email
         - password
+        - name
       properties:
         email:
           type: string
@@ -530,6 +526,21 @@ components:
           minLength: 8
           maxLength: 100
           example: "password123"
+        name:
+          type: string
+          maxLength: 100
+          example: "山田太郎"
+
+    RegisterSuccessResponse:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/AuthSuccessResponse"
+        - type: object
+          required:
+            - user
+          properties:
+            user:
+              $ref: "#/components/schemas/UserResponse"
 
     LoginRequest:
       type: object
@@ -584,6 +595,10 @@ components:
           type: string
           format: email
           example: "user@example.com"
+        name:
+          type: string
+          maxLength: 100
+          example: "山田太郎"
         role:
           type: string
           enum: [ADMIN, GUARDIAN, VIEWER]
@@ -605,6 +620,10 @@ components:
           minLength: 8
           maxLength: 100
           example: "new_password123"
+        name:
+          type: string
+          maxLength: 100
+          example: "山田太郎"
         role:
           type: string
           enum: [ADMIN, GUARDIAN, VIEWER]
@@ -804,7 +823,7 @@ components:
       # anyOfは、いずれかのスキーマに一致するが、全てに一致してもよいことを示す
       # allOfは、全てのスキーマに一致することを示す
       oneOf:
-        - required: [type] # typeの指定がない場合はいずれの詳細も更新しない
+        - properties: {} # 何も更新しない場合
         - required: [feedingDetails]
           properties:
             type: { enum: [FEEDING] }

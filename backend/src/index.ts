@@ -1,7 +1,14 @@
 import express, { Request, Response } from "express";
 import prisma from "@/libs/prisma";
-import { User } from "@prisma/client";
-import { ErrorResponse, GetUserRequestParams, GetUserResponse } from "@/types";
+import { Prisma, User } from "@prisma/client";
+import bcrypt from "bcrypt";
+import {
+  ErrorResponse,
+  GetUserRequestParams,
+  GetUserResponse,
+  PostUserRequest,
+  PostUserResponse,
+} from "@/types";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -10,23 +17,43 @@ app.use(express.json());
 
 // [Authentication] ユーザー認証とセッション管理
 // 新規ユーザー登録
-app.post("/users", async (req, res) => {
-  const { email, passwordHash, name } = req.body;
+app.post(
+  "/auth/register",
+  async (
+    req: Request<{}, {}, PostUserRequest>,
+    res: Response<PostUserResponse | ErrorResponse>
+  ) => {
+    const { email, password, name } = req.body;
 
-  try {
-    const newUser = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        name,
-      },
-    });
-    res.status(201).json(newUser);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create user" });
+    try {
+      const SALT_ROUNDS = 10;
+      const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          name,
+        },
+      });
+
+      const { passwordHash: _, ...userWithoutPasswordHash } = newUser;
+      res.status(201).json(userWithoutPasswordHash);
+    } catch (error) {
+      // Prismaの一意制約違反エラーコードをチェック
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        // 重複したメールアドレスの場合は409 Conflictを返す
+        return res.status(409).json({ message: "Email already exists" });
+      }
+      console.error(error);
+      // その他のエラーの場合は500 Internal Server Errorを返す
+      res.status(500).json({ message: "Failed to create user" });
+    }
   }
-});
+);
 
 // [Users] ユーザー情報管理
 // 特定ユーザー情報取得
@@ -44,13 +71,13 @@ app.get(
       });
 
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ message: "User not found" });
       }
 
       return res.status(200).json(user);
     } catch (error) {
       console.error(error);
-      res.status(500).json({ error: "Failed to fetch user" });
+      res.status(500).json({ message: "Failed to fetch user" });
     }
   }
 );

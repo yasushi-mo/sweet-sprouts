@@ -21,6 +21,7 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
       const response = await request.post("/auth/register").send({
         email: "testuser@example.com",
         password: "password123",
+        name: "test",
       });
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty("id");
@@ -34,11 +35,13 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
       await request.post("/auth/register").send({
         email: "existing@example.com",
         password: "password123",
+        name: "test",
       });
 
       const response = await request.post("/auth/register").send({
         email: "existing@example.com",
         password: "password123",
+        name: "test",
       });
       expect(response.status).toBe(409);
       expect(response.body.message).toBe("Email already exists");

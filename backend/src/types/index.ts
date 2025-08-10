@@ -6,7 +6,7 @@ import { User } from "@prisma/client";
  * @property {string} message - エラーメッセージ
  */
 export type ErrorResponse = {
-  error: string;
+  message: string;
 };
 
 // [Authentication] ユーザー認証とセッション管理
@@ -15,14 +15,16 @@ export type ErrorResponse = {
  * @description 新規ユーザー登録のリクエストボディの型
  * @property {string} email - ユーザーのメールアドレス
  * @property {string} password - ユーザーのパスワード
+ * @property {string} name - ユーザーの名前
  */
 export interface PostUserRequest {
   email: string;
   password: string;
+  name: string;
 }
 
 /** @description 新規ユーザー登録の成功レスポンスの型 */
-export type PostUserResponse = User;
+export type PostUserResponse = Omit<User, "passwordHash">;
 
 // [Users] ユーザー情報管理
 /**

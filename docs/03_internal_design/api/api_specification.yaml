@@ -73,7 +73,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
   /auth/session:
     post:
-      summary: 認証状態を最新にする
+      summary: 認証状態最新化
       tags:
         - Authentication
       description: |

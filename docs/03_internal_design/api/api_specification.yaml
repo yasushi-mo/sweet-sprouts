@@ -40,7 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthSuccessResponse"
+                $ref: "#/components/schemas/AuthSessionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "409":
@@ -66,16 +66,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/LoginSuccessResponse"
+                $ref: "#/components/schemas/AuthSessionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /auth/refresh-token:
+  /auth/session:
     post:
-      summary: アクセストークン再発行
+      summary: 認証状態最新化
       tags:
         - Authentication
+      description: |
+        有効期限が切れたアクセストークンを新しいものに更新し、同時に最新のユーザー情報を取得します。
+        このAPIは、アプリケーションの初回起動時や、長時間利用後に認証状態を維持するために利用されます。
       requestBody:
         required: true
         content:
@@ -84,32 +87,13 @@ paths:
               $ref: "#/components/schemas/RefreshTokenRequest"
       responses:
         "200":
-          description: アクセストークン再発行成功
+          description: 認証状態の更新に成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthSuccessResponse"
+                $ref: "#/components/schemas/AuthSessionResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
-  /auth/me:
-    get:
-      summary: 認証済みユーザー情報取得
-      tags:
-        - Authentication
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: ユーザー情報取得成功
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
   /users/{userId}:
     parameters:
       - name: userId
@@ -469,13 +453,8 @@ components:
     ErrorResponse:
       type: object
       required:
-        - statusCode
         - message
       properties:
-        statusCode:
-          type: integer
-          description: HTTPステータスコード
-          example: 400
         message:
           type: string
           description: エラーメッセージ
@@ -515,11 +494,23 @@ components:
           description: アクセストークン再発行に使用するJWTリフレッシュトークン
           example: "eyJ..."
 
+    AuthSessionResponse:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/AuthSuccessResponse"
+        - type: object
+          required:
+            - user
+          properties:
+            user:
+              $ref: "#/components/schemas/UserResponse"
+
     RegisterRequest:
       type: object
       required:
         - email
         - password
+        - name
       properties:
         email:
           type: string
@@ -530,6 +521,10 @@ components:
           minLength: 8
           maxLength: 100
           example: "password123"
+        name:
+          type: string
+          maxLength: 100
+          example: "山田太郎"
 
     LoginRequest:
       type: object
@@ -544,17 +539,6 @@ components:
         password:
           type: string
           example: "password123"
-
-    LoginSuccessResponse:
-      type: object
-      allOf:
-        - $ref: "#/components/schemas/AuthSuccessResponse"
-        - type: object
-          required:
-            - user
-          properties:
-            user:
-              $ref: "#/components/schemas/UserResponse"
 
     RefreshTokenRequest:
       type: object
@@ -584,6 +568,10 @@ components:
           type: string
           format: email
           example: "user@example.com"
+        name:
+          type: string
+          maxLength: 100
+          example: "山田太郎"
         role:
           type: string
           enum: [ADMIN, GUARDIAN, VIEWER]
@@ -605,6 +593,10 @@ components:
           minLength: 8
           maxLength: 100
           example: "new_password123"
+        name:
+          type: string
+          maxLength: 100
+          example: "山田太郎"
         role:
           type: string
           enum: [ADMIN, GUARDIAN, VIEWER]
@@ -804,7 +796,7 @@ components:
       # anyOfは、いずれかのスキーマに一致するが、全てに一致してもよいことを示す
       # allOfは、全てのスキーマに一致することを示す
       oneOf:
-        - required: [type] # typeの指定がない場合はいずれの詳細も更新しない
+        - properties: {} # 何も更新しない場合
         - required: [feedingDetails]
           properties:
             type: { enum: [FEEDING] }

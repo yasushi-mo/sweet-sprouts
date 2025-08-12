@@ -26,8 +26,8 @@ describe("[Users] ユーザー情報管理", () => {
     await prisma.$disconnect();
   });
 
-  describe("特定ユーザー情報取得", () => {
-    it("IDが存在する場合、200ステータスと対象のユーザーを返す", async () => {
+  describe("特定ユーザー情報取得API", () => {
+    it("IDが存在する場合、200ステータスと対象のユーザー情報を返す", async () => {
       const response = await request.get(`/users/${testUser.id}`);
 
       // ユーザーが見つかることを期待

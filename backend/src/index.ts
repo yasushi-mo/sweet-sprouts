@@ -1,32 +1,38 @@
-import express, { Request, Response } from "express";
+import express, { Request, response, Response } from "express";
 import prisma from "@/libs/prisma";
 import { Prisma, User } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { ErrorResponse } from "@/types";
+import { SALT_ROUNDS } from "@/constants";
+import { GetUserRequestParams, GetUserResponse } from "@/types/users";
 import {
-  ErrorResponse,
-  GetUserRequestParams,
-  GetUserResponse,
-  PostUserRequest,
-  PostUserResponse,
-} from "@/types";
+  PostAuthLoginRequest,
+  PostAuthLoginResponse,
+  PostAuthRegisterRequest,
+  PostAuthRegisterResponse,
+} from "@/types/auth";
+import jwt from "jsonwebtoken";
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+const JWT_SECRET = process.env.JWT_SECRET || "your-very-secret-key";
+const JWT_REFRESH_SECRET =
+  process.env.JWT_REFRESH_SECRET || "your-very-secret-refresh-key";
+
 app.use(express.json());
 
 // [Authentication] ユーザー認証とセッション管理
-// 新規ユーザー登録
+// 新規ユーザー登録API
 app.post(
   "/auth/register",
   async (
-    req: Request<{}, {}, PostUserRequest>,
-    res: Response<PostUserResponse | ErrorResponse>
+    req: Request<{}, {}, PostAuthRegisterRequest>,
+    res: Response<PostAuthRegisterResponse | ErrorResponse>
   ) => {
     const { email, password, name } = req.body;
 
     try {
-      const SALT_ROUNDS = 10;
       const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
       const newUser = await prisma.user.create({
@@ -55,8 +61,53 @@ app.post(
   }
 );
 
+// ユーザーログインAPI
+app.post(
+  "/auth/login",
+  async (
+    req: Request<{}, {}, PostAuthLoginRequest>,
+    res: Response<PostAuthLoginResponse | ErrorResponse>
+  ) => {
+    const { email, password } = req.body;
+
+    try {
+      // ユーザーの検索
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+      if (!user)
+        return res.status(401).json({ message: "Invalid email or password" });
+
+      // パスワードの確認
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isPasswordValid)
+        return res.status(401).json({ message: "Invalid email or password" });
+
+      // JWTトークンの生成
+      const accessToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+        expiresIn: "15m",
+      });
+      const refreshToken = jwt.sign({ userId: user.id }, JWT_REFRESH_SECRET, {
+        expiresIn: "7d",
+      });
+
+      // レスポンスからpasswordHashを除外
+      const { passwordHash: _, ...userWithoutPasswordHash } = user;
+
+      res.status(200).json({
+        accessToken,
+        refreshToken,
+        user: userWithoutPasswordHash,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
+
 // [Users] ユーザー情報管理
-// 特定ユーザー情報取得
+// 特定ユーザー情報取得API
 app.get(
   "/users/:id",
   async (

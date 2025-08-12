@@ -2,14 +2,13 @@ import express, { Request, Response } from "express";
 import prisma from "@/libs/prisma";
 import { Prisma, User } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { ErrorResponse } from "@/types";
+import { SALT_ROUNDS } from "@/constants";
+import { GetUserRequestParams, GetUserResponse } from "@/types/users";
 import {
-  ErrorResponse,
-  GetUserRequestParams,
-  GetUserResponse,
   PostAuthRegisterRequest,
   PostAuthRegisterResponse,
-} from "@/types";
-import { SALT_ROUNDS } from "@/constants";
+} from "@/types/auth";
 
 const app = express();
 const port = process.env.PORT || 3000;

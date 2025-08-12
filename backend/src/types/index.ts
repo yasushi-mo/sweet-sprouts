@@ -40,9 +40,9 @@ export type PostAuthLoginResponse = {
  * @description 特定ユーザー情報取得APIのリクエストパラメータの型
  * @property {string} id - ユーザーID
  */
-export interface GetUserRequestParams {
+export type GetUserRequestParams = {
   id: string;
-}
+};
 
 /* @description 特定ユーザー情報取得APIの成功レスポンスの型 */
 export type GetUserResponse = User;

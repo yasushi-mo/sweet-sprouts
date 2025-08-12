@@ -17,7 +17,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 
 // [Authentication] ユーザー認証とセッション管理
-// 新規ユーザー登録
+// 新規ユーザー登録API
 app.post(
   "/auth/register",
   async (
@@ -55,8 +55,10 @@ app.post(
   }
 );
 
+// ユーザーログインAPI
+
 // [Users] ユーザー情報管理
-// 特定ユーザー情報取得
+// 特定ユーザー情報取得API
 app.get(
   "/users/:id",
   async (

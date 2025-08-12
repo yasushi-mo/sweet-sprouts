@@ -6,8 +6,8 @@ import {
   ErrorResponse,
   GetUserRequestParams,
   GetUserResponse,
-  PostUserRequest,
-  PostUserResponse,
+  PostAuthRegisterRequest,
+  PostAuthRegisterResponse,
 } from "@/types";
 import { SALT_ROUNDS } from "@/constants";
 
@@ -21,8 +21,8 @@ app.use(express.json());
 app.post(
   "/auth/register",
   async (
-    req: Request<{}, {}, PostUserRequest>,
-    res: Response<PostUserResponse | ErrorResponse>
+    req: Request<{}, {}, PostAuthRegisterRequest>,
+    res: Response<PostAuthRegisterResponse | ErrorResponse>
   ) => {
     const { email, password, name } = req.body;
 

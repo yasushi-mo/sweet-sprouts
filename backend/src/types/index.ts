@@ -17,23 +17,23 @@ export type ErrorResponse = {
  * @property {string} password - ユーザーのパスワード
  * @property {string} name - ユーザーの名前
  */
-export type PostUserRequest = {
+export type PostAuthRegisterRequest = {
   email: string;
   password: string;
   name: string;
 };
 
 /** @description 新規ユーザー登録APIの成功レスポンスの型 */
-export type PostUserResponse = Omit<User, "passwordHash">;
+export type PostAuthRegisterResponse = Omit<User, "passwordHash">;
 
 /** @description ユーザーログインAPIのリクエストボディの型 */
-export type PostAuthLoginRequest = Omit<PostUserRequest, "name">;
+export type PostAuthLoginRequest = Omit<PostAuthRegisterRequest, "name">;
 
 /** @description ユーザーログインAPIの成功レスポンスの型 */
 export type PostAuthLoginResponse = {
   accessToken: string;
   refreshToke: string;
-} & PostUserResponse;
+} & PostAuthRegisterResponse;
 
 // [Users] ユーザー情報管理
 /**

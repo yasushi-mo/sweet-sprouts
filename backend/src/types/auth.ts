@@ -23,5 +23,6 @@ export type PostAuthLoginRequest = Omit<PostAuthRegisterRequest, "name">;
 /** @description ユーザーログインAPIの成功レスポンスの型 */
 export type PostAuthLoginResponse = {
   accessToken: string;
-  refreshToke: string;
-} & PostAuthRegisterResponse;
+  refreshToken: string;
+  user: PostAuthRegisterResponse;
+};

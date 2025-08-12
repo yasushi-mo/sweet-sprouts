@@ -10,4 +10,4 @@ export type GetUserRequestParams = {
 };
 
 /* @description 特定ユーザー情報取得APIの成功レスポンスの型 */
-export type GetUserResponse = User;
+export type GetUserResponse = Omit<User, "passwordHash">;

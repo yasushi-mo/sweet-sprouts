@@ -9,6 +9,7 @@ import {
   PostUserRequest,
   PostUserResponse,
 } from "@/types";
+import { SALT_ROUNDS } from "@/constants";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,7 +27,6 @@ app.post(
     const { email, password, name } = req.body;
 
     try {
-      const SALT_ROUNDS = 10;
       const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
       const newUser = await prisma.user.create({

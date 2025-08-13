@@ -3,7 +3,7 @@ import prisma from "@/libs/prisma";
 import { Prisma, User } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { ErrorResponse } from "@/types";
-import { SALT_ROUNDS } from "@/constants";
+import { JWT_REFRESH_SECRET, JWT_SECRET, SALT_ROUNDS } from "@/constants";
 import { GetUserRequestParams, GetUserResponse } from "@/types/users";
 import {
   PostAuthLoginRequest,
@@ -15,10 +15,6 @@ import jwt from "jsonwebtoken";
 
 const app = express();
 const port = process.env.PORT || 3000;
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-very-secret-key";
-const JWT_REFRESH_SECRET =
-  process.env.JWT_REFRESH_SECRET || "your-very-secret-refresh-key";
 
 app.use(express.json());
 

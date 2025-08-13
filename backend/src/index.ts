@@ -12,6 +12,7 @@ import {
   PostAuthRegisterResponse,
 } from "@/types/auth";
 import jwt from "jsonwebtoken";
+import { authMiddleware } from "@/middlewares/authMiddleware";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -106,6 +107,7 @@ app.post(
 // 特定ユーザー情報取得API
 app.get(
   "/users/:id",
+  authMiddleware,
   async (
     req: Request<GetUserRequestParams>,
     res: Response<GetUserResponse | ErrorResponse>

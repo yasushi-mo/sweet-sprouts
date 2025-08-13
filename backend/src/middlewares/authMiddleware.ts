@@ -33,11 +33,13 @@ export const authMiddleware = (
    * ※ authHeader は "Bearer TOKEN" の形式を想定（authHeader の2番目の要素にトークンが含まれる）
    **/
   const token = authHeader && authHeader.split("")[1];
+  console.log("🚀 ~ authMiddleware ~ token:", token);
   if (!token)
     return res.status(401).json({ message: "Authentication token is missing" });
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log("🚀 ~ authMiddleware ~ decoded:", decoded);
     if (!isDecodedToken(decoded)) throw new Error("Invalid token payload");
 
     // 認証が成功したら、次のミドルウェアまたはルートハンドラへ

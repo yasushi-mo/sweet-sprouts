@@ -112,18 +112,39 @@ app.get(
     req: Request<GetUserRequestParams>,
     res: Response<GetUserResponse | ErrorResponse>
   ) => {
-    const { id } = req.params;
+    const { id: requestedId } = req.params;
 
     try {
-      const user: User | null = await prisma.user.findUnique({
-        where: { id },
+      /** ミドルウェアで付与された req.user.id （リクエストをしたユーザーのID） */
+      const authenticatedUserId = req.user.id;
+      const authenticatedUser: User | null = await prisma.user.findUnique({
+        where: { id: authenticatedUserId },
       });
 
-      if (!user) {
+      if (!authenticatedUser)
         return res.status(404).json({ message: "User not found" });
-      }
 
-      return res.status(200).json(user);
+      // 認可チェック
+      if (
+        authenticatedUser.id !== requestedId &&
+        authenticatedUser.role !== "ADMIN"
+      )
+        return res.status(403).json({
+          message: "Access to this resource is denied",
+        });
+
+      /** リクエストされたユーザーの情報 */
+      const requestedUser: User | null = await prisma.user.findUnique({
+        where: { id: requestedId },
+      });
+
+      if (!requestedUser)
+        return res.status(404).json({ message: "User not found" });
+
+      // レスポンスからpasswordHashを除外
+      const { passwordHash: _, ...userWithoutPasswordHash } = requestedUser;
+
+      return res.status(200).json(userWithoutPasswordHash);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Failed to fetch user" });

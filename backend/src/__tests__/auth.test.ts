@@ -1,7 +1,15 @@
 import supertest from "supertest";
 import app from "@/index";
 import prisma from "@/libs/prisma";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 import { User } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { SALT_ROUNDS } from "@/constants";
@@ -12,7 +20,7 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
   let loginTestUser: User;
   const password = "password123";
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     await prisma.user.deleteMany();
 
     // ログインテストユーザーをデータベースに作成
@@ -26,7 +34,7 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
     });
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await prisma.user.deleteMany();
     await prisma.$disconnect();
   });

@@ -22,6 +22,7 @@ const isDecodedToken = (payload: unknown): payload is DecodedToken => {
   );
 };
 
+/** 認証チェック */
 export const authMiddleware = (
   req: Request,
   res: Response,

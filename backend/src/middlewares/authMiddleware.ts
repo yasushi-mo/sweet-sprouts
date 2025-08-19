@@ -22,6 +22,7 @@ const isDecodedToken = (payload: unknown): payload is DecodedToken => {
   );
 };
 
+/** 認証チェック */
 export const authMiddleware = (
   req: Request,
   res: Response,
@@ -39,6 +40,8 @@ export const authMiddleware = (
   try {
     const decoded = jwt.verify(accessToken, JWT_SECRET);
     if (!isDecodedToken(decoded)) throw new Error("Invalid token payload");
+
+    req.user = { id: decoded.id };
 
     // 認証が成功したら、次のミドルウェアまたはルートハンドラへ
     next();

@@ -81,10 +81,10 @@ app.post(
         return res.status(401).json({ message: "Invalid email or password" });
 
       // JWTトークンの生成
-      const accessToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+      const accessToken = jwt.sign({ id: user.id }, JWT_SECRET, {
         expiresIn: "15m",
       });
-      const refreshToken = jwt.sign({ userId: user.id }, JWT_REFRESH_SECRET, {
+      const refreshToken = jwt.sign({ id: user.id }, JWT_REFRESH_SECRET, {
         expiresIn: "7d",
       });
 
@@ -112,18 +112,39 @@ app.get(
     req: Request<GetUserRequestParams>,
     res: Response<GetUserResponse | ErrorResponse>
   ) => {
-    const { id } = req.params;
+    const { id: requestedId } = req.params;
 
     try {
-      const user: User | null = await prisma.user.findUnique({
-        where: { id },
+      /** リクエストされたユーザーの情報 */
+      const requestedUser: User | null = await prisma.user.findUnique({
+        where: { id: requestedId },
       });
 
-      if (!user) {
+      if (!requestedUser)
         return res.status(404).json({ message: "User not found" });
-      }
 
-      return res.status(200).json(user);
+      /** ミドルウェアで付与された req.user.id （リクエストをしたユーザーのID） */
+      const authenticatedUserId = req.user.id;
+      const authenticatedUser: User | null = await prisma.user.findUnique({
+        where: { id: authenticatedUserId },
+      });
+
+      if (!authenticatedUser)
+        return res.status(404).json({ message: "User not found" });
+
+      // 認可チェック
+      if (
+        authenticatedUser.id !== requestedId &&
+        authenticatedUser.role !== "ADMIN"
+      )
+        return res.status(403).json({
+          message: "Access to this resource is denied",
+        });
+
+      // レスポンスからpasswordHashを除外
+      const { passwordHash: _, ...userWithoutPasswordHash } = requestedUser;
+
+      return res.status(200).json(userWithoutPasswordHash);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Failed to fetch user" });

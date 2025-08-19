@@ -87,6 +87,7 @@ describe("[Users] ユーザー情報管理", () => {
 
       // ユーザーが見つからないため404エラーを期待
       expect(response.status).toBe(404);
+      expect(response.body.message).toBe("User not found");
     });
 
     it("認証済みユーザーが他のユーザーの情報を取得しようとした場合、403を返す", async () => {
@@ -98,6 +99,18 @@ describe("[Users] ユーザー情報管理", () => {
       // 認可チェックで失敗し、403エラーを期待
       expect(response.status).toBe(403);
       expect(response.body.message).toBe("Access to this resource is denied");
+    });
+    it("管理者ユーザーが他のユーザーの情報を取得する場合、200を返す", async () => {
+      // 認証はadminUserで行い、anotherUserの情報をリクエストする
+      const response = await request
+        .get(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${adminUserAccessToken}`);
+
+      // 管理者はアクセスできるため200を期待
+      expect(response.status).toBe(200);
+      // レスポンスのJSONボディが正しいことを期待
+      expect(response.body.email).toBe(anotherUser.email);
+      expect(response.body.name).toBe(anotherUser.name);
     });
   });
 });

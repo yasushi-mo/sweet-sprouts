@@ -5,7 +5,6 @@ import app from "@/index";
 import { User } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "@/constants";
-import { NextFunction, Request, Response } from "express";
 
 const request = supertest(app);
 

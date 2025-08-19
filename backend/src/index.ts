@@ -81,10 +81,10 @@ app.post(
         return res.status(401).json({ message: "Invalid email or password" });
 
       // JWTトークンの生成
-      const accessToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
+      const accessToken = jwt.sign({ id: user.id }, JWT_SECRET, {
         expiresIn: "15m",
       });
-      const refreshToken = jwt.sign({ userId: user.id }, JWT_REFRESH_SECRET, {
+      const refreshToken = jwt.sign({ id: user.id }, JWT_REFRESH_SECRET, {
         expiresIn: "7d",
       });
 
@@ -115,6 +115,14 @@ app.get(
     const { id: requestedId } = req.params;
 
     try {
+      /** リクエストされたユーザーの情報 */
+      const requestedUser: User | null = await prisma.user.findUnique({
+        where: { id: requestedId },
+      });
+
+      if (!requestedUser)
+        return res.status(404).json({ message: "User not found" });
+
       /** ミドルウェアで付与された req.user.id （リクエストをしたユーザーのID） */
       const authenticatedUserId = req.user.id;
       const authenticatedUser: User | null = await prisma.user.findUnique({
@@ -132,14 +140,6 @@ app.get(
         return res.status(403).json({
           message: "Access to this resource is denied",
         });
-
-      /** リクエストされたユーザーの情報 */
-      const requestedUser: User | null = await prisma.user.findUnique({
-        where: { id: requestedId },
-      });
-
-      if (!requestedUser)
-        return res.status(404).json({ message: "User not found" });
 
       // レスポンスからpasswordHashを除外
       const { passwordHash: _, ...userWithoutPasswordHash } = requestedUser;

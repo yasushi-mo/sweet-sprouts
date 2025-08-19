@@ -41,6 +41,8 @@ export const authMiddleware = (
     const decoded = jwt.verify(accessToken, JWT_SECRET);
     if (!isDecodedToken(decoded)) throw new Error("Invalid token payload");
 
+    req.user = { id: decoded.id };
+
     // 認証が成功したら、次のミドルウェアまたはルートハンドラへ
     next();
   } catch (error) {

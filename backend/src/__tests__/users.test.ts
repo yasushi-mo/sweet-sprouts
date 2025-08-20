@@ -65,11 +65,6 @@ describe("[Users] ユーザー情報管理", () => {
     await prisma.user.deleteMany();
   });
 
-  // すべてのテストが完了した後にデータベース接続を切断
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
-
   describe("特定ユーザー情報取得API", () => {
     it("認証済みユーザーが自分の情報を取得する場合、200ステータスと対象のユーザー情報を返す", async () => {
       const response = await request

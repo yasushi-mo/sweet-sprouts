@@ -28,7 +28,6 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
 
   afterEach(async () => {
     await prisma.user.deleteMany();
-    await prisma.$disconnect();
   });
 
   describe("新規ユーザー登録API", () => {

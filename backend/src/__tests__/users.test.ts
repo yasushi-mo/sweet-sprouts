@@ -1,5 +1,5 @@
 import supertest from "supertest";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import prisma from "@/libs/prisma";
 import app from "@/index";
 import { User } from "@prisma/client";
@@ -63,7 +63,6 @@ describe("[Users] ユーザー情報管理", () => {
 
   afterEach(async () => {
     await prisma.user.deleteMany();
-    await prisma.$disconnect();
   });
 
   describe("特定ユーザー情報取得API", () => {

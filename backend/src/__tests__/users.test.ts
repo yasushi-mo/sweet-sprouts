@@ -1,5 +1,5 @@
 import supertest from "supertest";
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import prisma from "@/libs/prisma";
 import app from "@/index";
 import { User } from "@prisma/client";
@@ -63,6 +63,10 @@ describe("[Users] ユーザー情報管理", () => {
 
   afterEach(async () => {
     await prisma.user.deleteMany();
+  });
+
+  // すべてのテストが完了した後にデータベース接続を切断
+  afterAll(async () => {
     await prisma.$disconnect();
   });
 

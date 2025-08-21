@@ -78,17 +78,7 @@ describe("[Users] ユーザー情報管理", () => {
       expect(response.body.name).toBe(testUser.name);
     });
 
-    it("対象のIDが存在しない場合、404を返す", async () => {
-      const response = await request
-        .get("/users/no-existent-id")
-        .set("Authorization", `Bearer ${testUserAccessToken}`);
-
-      // ユーザーが見つからないため404エラーを期待
-      expect(response.status).toBe(404);
-      expect(response.body.message).toBe("User not found");
-    });
-
-    it("認証済みユーザーが他のユーザーの情報を取得しようとした場合、403を返す", async () => {
+    it("認証済みユーザーが他のユーザーの情報を取得しようとした場合、403ステータスとエラーメッセージを返す", async () => {
       // 認証はtestUserで行い、anotherUserの情報をリクエストする
       const response = await request
         .get(`/users/${anotherUser.id}`)
@@ -98,7 +88,8 @@ describe("[Users] ユーザー情報管理", () => {
       expect(response.status).toBe(403);
       expect(response.body.message).toBe("Access to this resource is denied");
     });
-    it("管理者ユーザーが他のユーザーの情報を取得する場合、200を返す", async () => {
+
+    it("管理者ユーザーが他のユーザーの情報を取得する場合、200ステータスと対象のユーザー情報を返す", async () => {
       // 認証はadminUserで行い、anotherUserの情報をリクエストする
       const response = await request
         .get(`/users/${anotherUser.id}`)
@@ -110,5 +101,27 @@ describe("[Users] ユーザー情報管理", () => {
       expect(response.body.email).toBe(anotherUser.email);
       expect(response.body.name).toBe(anotherUser.name);
     });
+
+    it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す", async () => {
+      const response = await request
+        .get("/users/no-existent-id")
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // ユーザーが見つからないため404エラーを期待
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe("User not found");
+    });
+  });
+  describe("特定ユーザー情報更新API", () => {
+    it(
+      "認証済みユーザーが自分の情報を更新する場合、200ステータスと更新後のユーザー情報を返す"
+    );
+    it(
+      "認証済みユーザーが他のユーザーの情報を更新しようとした場合、403ステータスとエラーメッセージを返す"
+    );
+    it(
+      "管理者ユーザーが他のユーザーの情報を更新する場合、200と対象のユーザー情報を返す"
+    );
+    it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す");
   });
 });

@@ -31,7 +31,7 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
   });
 
   describe("新規ユーザー登録API", () => {
-    it("新しいユーザーを作成し、201ステータスを返す", async () => {
+    it("新しいユーザーを作成し、201ステータスとユーザー情報を返す", async () => {
       const response = await request.post("/auth/register").send({
         email: "testuser@example.com",
         password: "password123",
@@ -44,7 +44,7 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
       expect(response.body).not.toHaveProperty("passwordHash");
     });
 
-    it("メールアドレスがすでに存在する場合、409ステータスを返す", async () => {
+    it("メールアドレスがすでに存在する場合、409ステータスとエラーメッセージを返す", async () => {
       // 事前にユーザーを作成
       await request.post("/auth/register").send({
         email: "existing@example.com",
@@ -85,7 +85,7 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
       expect(response.body.user).not.toHaveProperty("passwordHash");
     });
 
-    it("パスワードが不正な場合、401ステータスを返す", async () => {
+    it("パスワードが不正な場合、401ステータスとエラーメッセージを返す", async () => {
       const response = await request.post("/auth/login").send({
         email: loginTestUser.email,
         password: "wrong-password",
@@ -95,7 +95,7 @@ describe("[Authentication] ユーザー認証とセッション管理", () => {
       expect(response.body.message).toBe("Invalid email or password");
     });
 
-    it("ユーザーが存在しない場合、401ステータスを返す", async () => {
+    it("ユーザーが存在しない場合、401ステータスとエラーメッセージを返す", async () => {
       const response = await request.post("/auth/login").send({
         email: "no-existent@example.com",
         password,

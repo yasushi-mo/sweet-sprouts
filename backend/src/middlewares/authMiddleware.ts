@@ -22,8 +22,8 @@ const isDecodedToken = (payload: unknown): payload is DecodedToken => {
   );
 };
 
-/** 認証チェック */
-export const authMiddleware = (
+/** リクエストヘッダーのJWT（JSON Web Token）の認証チェック */
+export const jwtAuthMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction

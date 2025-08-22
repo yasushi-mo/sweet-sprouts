@@ -1,6 +1,6 @@
 // [Users] ユーザー情報管理
 import prisma from "@/libs/prisma";
-import { authMiddleware } from "@/middlewares/authMiddleware";
+import { jwtAuthMiddleware } from "@/middlewares/authMiddleware";
 import { ErrorResponse } from "@/types";
 import {
   GetUserRequestParams,
@@ -16,7 +16,7 @@ const router = express.Router();
 // 特定ユーザー情報取得API
 router.get(
   "/:id",
-  authMiddleware,
+  jwtAuthMiddleware,
   async (
     req: Request<GetUserRequestParams>,
     res: Response<GetUserResponse | ErrorResponse>
@@ -64,7 +64,7 @@ router.get(
 // 特定ユーザー情報更新API
 router.put(
   "/:id",
-  authMiddleware,
+  jwtAuthMiddleware,
   async (
     req: Request<GetUserRequestParams, {}, PutUserRequestBody>,
     res: Response<PutUserResponse | ErrorResponse>

@@ -192,7 +192,7 @@ describe("[Users] ユーザー情報管理", () => {
 
       // メールアドレスの重複により409エラーを期待
       expect(response.status).toBe(409);
-      expect(response.body.message).toBe("Email already in use");
+      expect(response.body.message).toBe("Email already exists");
     });
   });
 });

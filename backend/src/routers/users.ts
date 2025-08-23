@@ -1,6 +1,10 @@
 // [Users] ユーザー情報管理
 import prisma from "@/libs/prisma";
-import { jwtAuthenticationMiddleware } from "@/middlewares/auth";
+import {
+  jwtAuthenticationMiddleware,
+  userAuthorizationMiddleware,
+} from "@/middlewares/auth";
+import { getUserByIdMiddleware } from "@/middlewares/users";
 import { ErrorResponse } from "@/types";
 import {
   GetUserRequestParams,
@@ -17,38 +21,15 @@ const router = express.Router();
 router.get(
   "/:id",
   jwtAuthenticationMiddleware,
+  getUserByIdMiddleware,
+  userAuthorizationMiddleware,
   async (
     req: Request<GetUserRequestParams>,
     res: Response<GetUserResponse | ErrorResponse>
   ) => {
-    const { id: requestedId } = req.params;
-
     try {
-      /** リクエストされたユーザーの情報 */
-      const requestedUser: User | null = await prisma.user.findUnique({
-        where: { id: requestedId },
-      });
-
-      if (!requestedUser)
-        return res.status(404).json({ message: "User not found" });
-
-      /** ミドルウェアで付与された req.user.id （リクエストをしたユーザーのID） */
-      const authenticatedUserId = req.user.id;
-      const authenticatedUser: User | null = await prisma.user.findUnique({
-        where: { id: authenticatedUserId },
-      });
-
-      if (!authenticatedUser)
-        return res.status(404).json({ message: "User not found" });
-
-      // 認可チェック
-      if (
-        authenticatedUser.id !== requestedId &&
-        authenticatedUser.role !== "ADMIN"
-      )
-        return res.status(403).json({
-          message: "Access to this resource is denied",
-        });
+      /** getUserByIdMiddleware で取得したユーザーの情報 */
+      const requestedUser = req.requestedUser;
 
       // レスポンスからpasswordHashを除外
       const { passwordHash: _, ...userWithoutPasswordHash } = requestedUser;

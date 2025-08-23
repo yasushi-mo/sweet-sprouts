@@ -196,11 +196,57 @@ describe("[Users] ユーザー情報管理", () => {
     });
   });
   describe("特定ユーザー削除API", () => {
-    it("認証済みユーザーが自分自身を削除する場合、204ステータスを返す");
-    it("管理者ユーザーが他のユーザーを削除する場合、204ステータスを返す");
-    it(
-      "認証済みユーザーが他のユーザーを削除しようとした場合、403ステータスとエラーメッセージを返す"
-    );
-    it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す");
+    it("認証済みユーザーが自分自身を削除する場合、204ステータスを返す", async () => {
+      const response = await request
+        .delete(`/users/${testUser.id}`)
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // ユーザー削除に成功し、コンテンツがないため204を期待
+      expect(response.status).toBe(204);
+
+      // データベースからユーザーが削除されていることを確認
+      const deletedUser = await prisma.user.findUnique({
+        where: { id: testUser.id },
+      });
+      expect(deletedUser).toBeNull();
+    });
+    it("管理者ユーザーが他のユーザーを削除する場合、204ステータスを返す", async () => {
+      const response = await request
+        .delete(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${adminUserAccessToken}`);
+
+      // 管理者は削除できるため204を期待
+      expect(response.status).toBe(204);
+
+      // データベースからユーザーが削除されていることを確認
+      const deletedUser = await prisma.user.findUnique({
+        where: { id: anotherUser.id },
+      });
+      expect(deletedUser).toBeNull();
+    });
+    it("認証済みユーザーが他のユーザーを削除しようとした場合、403ステータスとエラーメッセージを返す", async () => {
+      const response = await request
+        .delete(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // 認可チェックで失敗し、403エラーを期待
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("Access to this resource is denied");
+
+      // データベース上のユーザーが削除されていないことを確認
+      const user = await prisma.user.findUnique({
+        where: { id: anotherUser.id },
+      });
+      expect(user).not.toBeNull();
+    });
+    it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す", async () => {
+      const response = await request
+        .delete("/users/non-existent-id")
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // ユーザーが見つからないため404エラーを期待
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe("User not found");
+    });
   });
 });

@@ -78,17 +78,6 @@ describe("[Users] ユーザー情報管理", () => {
       expect(response.body.name).toBe(testUser.name);
     });
 
-    it("認証済みユーザーが他のユーザーの情報を取得しようとした場合、403ステータスとエラーメッセージを返す", async () => {
-      // 認証はtestUserで行い、anotherUserの情報をリクエストする
-      const response = await request
-        .get(`/users/${anotherUser.id}`)
-        .set("Authorization", `Bearer ${testUserAccessToken}`);
-
-      // 認可チェックで失敗し、403エラーを期待
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe("Access to this resource is denied");
-    });
-
     it("管理者ユーザーが他のユーザーの情報を取得する場合、200ステータスと対象のユーザー情報を返す", async () => {
       // 認証はadminUserで行い、anotherUserの情報をリクエストする
       const response = await request
@@ -100,6 +89,17 @@ describe("[Users] ユーザー情報管理", () => {
       // レスポンスのJSONボディが正しいことを期待
       expect(response.body.email).toBe(anotherUser.email);
       expect(response.body.name).toBe(anotherUser.name);
+    });
+
+    it("認証済みユーザーが他のユーザーの情報を取得しようとした場合、403ステータスとエラーメッセージを返す", async () => {
+      // 認証はtestUserで行い、anotherUserの情報をリクエストする
+      const response = await request
+        .get(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // 認可チェックで失敗し、403エラーを期待
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("Access to this resource is denied");
     });
 
     it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す", async () => {
@@ -138,18 +138,6 @@ describe("[Users] ユーザー情報管理", () => {
       expect(updatedUser?.email).toBe(UPDATE_DATA.email);
     });
 
-    it("認証済みユーザーが他のユーザーの情報を更新しようとした場合、403ステータスとエラーメッセージを返す", async () => {
-      // 認証はtestUserで行い、anotherUserの情報を更新しようとリクエスト
-      const response = await request
-        .put(`/users/${anotherUser.id}`)
-        .set("Authorization", `Bearer ${testUserAccessToken}`)
-        .send(UPDATE_DATA);
-
-      // 認可チェックで失敗し、403エラーを期待
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe("Access to this resource is denied");
-    });
-
     it("管理者ユーザーが他のユーザーの情報を更新する場合、200と対象のユーザー情報を返す", async () => {
       // 認証はadminUserで行い、anotherUserの情報を更新しようとリクエスト
       const response = await request
@@ -168,6 +156,18 @@ describe("[Users] ユーザー情報管理", () => {
       });
       expect(updatedUser?.name).toBe(UPDATE_DATA.name);
       expect(updatedUser?.email).toBe(UPDATE_DATA.email);
+    });
+
+    it("認証済みユーザーが他のユーザーの情報を更新しようとした場合、403ステータスとエラーメッセージを返す", async () => {
+      // 認証はtestUserで行い、anotherUserの情報を更新しようとリクエスト
+      const response = await request
+        .put(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${testUserAccessToken}`)
+        .send(UPDATE_DATA);
+
+      // 認可チェックで失敗し、403エラーを期待
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("Access to this resource is denied");
     });
 
     it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す", async () => {

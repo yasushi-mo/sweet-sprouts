@@ -28,7 +28,7 @@ router.get(
     res: Response<GetUserResponse | ErrorResponse>
   ) => {
     try {
-      /** getUserByIdMiddleware で取得したユーザーの情報 */
+      /** getUserByIdMiddleware で取得したユーザー情報 */
       const requestedUser = req.requestedUser;
 
       // レスポンスからpasswordHashを除外
@@ -46,46 +46,21 @@ router.get(
 router.put(
   "/:id",
   jwtAuthenticationMiddleware,
+  getUserByIdMiddleware,
+  userAuthorizationMiddleware,
   async (
     req: Request<GetUserRequestParams, {}, PutUserRequestBody>,
     res: Response<PutUserResponse | ErrorResponse>
   ) => {
-    const { id: requestedId } = req.params;
     const updateData = req.body;
 
     try {
-      /** リクエストされたユーザーの情報 */
-      const requestedUser: User | null = await prisma.user.findUnique({
-        where: { id: requestedId },
-      });
-
-      if (!requestedUser)
-        return res.status(404).json({ message: "User not found" });
-
-      /** ミドルウェアで付与された req.user.id （リクエストをしたユーザーのID） */
-      const authenticatedUserId = req.user.id;
-      const authenticatedUser: User | null = await prisma.user.findUnique({
-        where: { id: authenticatedUserId },
-      });
-
-      if (!authenticatedUser)
-        return res.status(404).json({ message: "User not found" });
-
-      // 認可チェック
-      // ADMINロールを持つユーザーのみが、他のユーザーの情報を更新できる
-      // また、ユーザーは自身の情報のみ更新できる
-      if (
-        authenticatedUser.id !== requestedId &&
-        authenticatedUser.role !== "ADMIN"
-      ) {
-        return res.status(403).json({
-          message: "Access to this resource is denied",
-        });
-      }
+      /** getUserByIdMiddleware で取得したユーザー情報 */
+      const requestedUser = req.requestedUser;
 
       // Prismaの更新操作
       const updatedUser = await prisma.user.update({
-        where: { id: requestedId },
+        where: { id: requestedUser.id },
         data: updateData,
       });
 

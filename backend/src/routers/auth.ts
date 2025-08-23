@@ -7,9 +7,9 @@ import { SALT_ROUNDS, JWT_SECRET, JWT_REFRESH_SECRET } from "@/constants";
 import prisma from "@/libs/prisma";
 import { ErrorResponse } from "@/types";
 import {
-  PostAuthRegisterRequest,
+  PostAuthRegisterRequestBody,
   PostAuthRegisterResponse,
-  PostAuthLoginRequest,
+  PostAuthLoginRequestBody,
   PostAuthLoginResponse,
 } from "@/types/auth";
 
@@ -19,7 +19,7 @@ const router = express.Router();
 router.post(
   "/register",
   async (
-    req: Request<{}, {}, PostAuthRegisterRequest>,
+    req: Request<{}, {}, PostAuthRegisterRequestBody>,
     res: Response<PostAuthRegisterResponse | ErrorResponse>
   ) => {
     const { email, password, name } = req.body;
@@ -57,7 +57,7 @@ router.post(
 router.post(
   "/login",
   async (
-    req: Request<{}, {}, PostAuthLoginRequest>,
+    req: Request<{}, {}, PostAuthLoginRequestBody>,
     res: Response<PostAuthLoginResponse | ErrorResponse>
   ) => {
     const { email, password } = req.body;

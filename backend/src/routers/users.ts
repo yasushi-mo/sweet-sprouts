@@ -1,6 +1,6 @@
 // [Users] ユーザー情報管理
 import prisma from "@/libs/prisma";
-import { jwtAuthenticationMiddleware } from "@/middlewares/authMiddleware";
+import { jwtAuthenticationMiddleware } from "@/middlewares/auth";
 import { ErrorResponse } from "@/types";
 import {
   GetUserRequestParams,

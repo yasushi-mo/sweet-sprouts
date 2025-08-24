@@ -22,3 +22,9 @@ export type PutUserRequestBody = Partial<
 
 /** @description 特定ユーザー情報更新APIの成功レスポンスの型 */
 export type PutUserResponse = Omit<User, "passwordHash">;
+
+// [特定ユーザー情報削除API]
+/** @description 特定ユーザー情報削除APIの成功レスポンスの型 */
+export type DeleteUserResponse = {
+  message: string;
+};

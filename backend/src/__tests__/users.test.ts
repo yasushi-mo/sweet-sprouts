@@ -78,17 +78,6 @@ describe("[Users] ユーザー情報管理", () => {
       expect(response.body.name).toBe(testUser.name);
     });
 
-    it("認証済みユーザーが他のユーザーの情報を取得しようとした場合、403ステータスとエラーメッセージを返す", async () => {
-      // 認証はtestUserで行い、anotherUserの情報をリクエストする
-      const response = await request
-        .get(`/users/${anotherUser.id}`)
-        .set("Authorization", `Bearer ${testUserAccessToken}`);
-
-      // 認可チェックで失敗し、403エラーを期待
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe("Access to this resource is denied");
-    });
-
     it("管理者ユーザーが他のユーザーの情報を取得する場合、200ステータスと対象のユーザー情報を返す", async () => {
       // 認証はadminUserで行い、anotherUserの情報をリクエストする
       const response = await request
@@ -100,6 +89,17 @@ describe("[Users] ユーザー情報管理", () => {
       // レスポンスのJSONボディが正しいことを期待
       expect(response.body.email).toBe(anotherUser.email);
       expect(response.body.name).toBe(anotherUser.name);
+    });
+
+    it("認証済みユーザーが他のユーザーの情報を取得しようとした場合、403ステータスとエラーメッセージを返す", async () => {
+      // 認証はtestUserで行い、anotherUserの情報をリクエストする
+      const response = await request
+        .get(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // 認可チェックで失敗し、403エラーを期待
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("Access to this resource is denied");
     });
 
     it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す", async () => {
@@ -138,18 +138,6 @@ describe("[Users] ユーザー情報管理", () => {
       expect(updatedUser?.email).toBe(UPDATE_DATA.email);
     });
 
-    it("認証済みユーザーが他のユーザーの情報を更新しようとした場合、403ステータスとエラーメッセージを返す", async () => {
-      // 認証はtestUserで行い、anotherUserの情報を更新しようとリクエスト
-      const response = await request
-        .put(`/users/${anotherUser.id}`)
-        .set("Authorization", `Bearer ${testUserAccessToken}`)
-        .send(UPDATE_DATA);
-
-      // 認可チェックで失敗し、403エラーを期待
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe("Access to this resource is denied");
-    });
-
     it("管理者ユーザーが他のユーザーの情報を更新する場合、200と対象のユーザー情報を返す", async () => {
       // 認証はadminUserで行い、anotherUserの情報を更新しようとリクエスト
       const response = await request
@@ -168,6 +156,18 @@ describe("[Users] ユーザー情報管理", () => {
       });
       expect(updatedUser?.name).toBe(UPDATE_DATA.name);
       expect(updatedUser?.email).toBe(UPDATE_DATA.email);
+    });
+
+    it("認証済みユーザーが他のユーザーの情報を更新しようとした場合、403ステータスとエラーメッセージを返す", async () => {
+      // 認証はtestUserで行い、anotherUserの情報を更新しようとリクエスト
+      const response = await request
+        .put(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${testUserAccessToken}`)
+        .send(UPDATE_DATA);
+
+      // 認可チェックで失敗し、403エラーを期待
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("Access to this resource is denied");
     });
 
     it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す", async () => {
@@ -193,6 +193,60 @@ describe("[Users] ユーザー情報管理", () => {
       // メールアドレスの重複により409エラーを期待
       expect(response.status).toBe(409);
       expect(response.body.message).toBe("Email already exists");
+    });
+  });
+  describe("特定ユーザー削除API", () => {
+    it("認証済みユーザーが自分自身を削除する場合、204ステータスを返す", async () => {
+      const response = await request
+        .delete(`/users/${testUser.id}`)
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // ユーザー削除に成功し、コンテンツがないため204を期待
+      expect(response.status).toBe(204);
+
+      // データベースからユーザーが削除されていることを確認
+      const deletedUser = await prisma.user.findUnique({
+        where: { id: testUser.id },
+      });
+      expect(deletedUser).toBeNull();
+    });
+    it("管理者ユーザーが他のユーザーを削除する場合、204ステータスを返す", async () => {
+      const response = await request
+        .delete(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${adminUserAccessToken}`);
+
+      // 管理者は削除できるため204を期待
+      expect(response.status).toBe(204);
+
+      // データベースからユーザーが削除されていることを確認
+      const deletedUser = await prisma.user.findUnique({
+        where: { id: anotherUser.id },
+      });
+      expect(deletedUser).toBeNull();
+    });
+    it("認証済みユーザーが他のユーザーを削除しようとした場合、403ステータスとエラーメッセージを返す", async () => {
+      const response = await request
+        .delete(`/users/${anotherUser.id}`)
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // 認可チェックで失敗し、403エラーを期待
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("Access to this resource is denied");
+
+      // データベース上のユーザーが削除されていないことを確認
+      const user = await prisma.user.findUnique({
+        where: { id: anotherUser.id },
+      });
+      expect(user).not.toBeNull();
+    });
+    it("対象のIDが存在しない場合、404ステータスとエラーメッセージを返す", async () => {
+      const response = await request
+        .delete("/users/non-existent-id")
+        .set("Authorization", `Bearer ${testUserAccessToken}`);
+
+      // ユーザーが見つからないため404エラーを期待
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe("User not found");
     });
   });
 });

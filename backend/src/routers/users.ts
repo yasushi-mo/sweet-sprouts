@@ -7,6 +7,7 @@ import {
 import { getUserByIdMiddleware } from "@/middlewares/users";
 import { ErrorResponse } from "@/types";
 import {
+  DeleteUserResponse,
   GetUserRequestParams,
   GetUserResponse,
   PutUserRequestBody,
@@ -79,6 +80,34 @@ router.put(
       }
       console.error(error);
       res.status(500).json({ message: "Failed to update user" });
+    }
+  }
+);
+
+// 特定ユーザー情報削除API
+router.delete(
+  "/:id",
+  jwtAuthenticationMiddleware,
+  getUserByIdMiddleware,
+  userAuthorizationMiddleware,
+  async (
+    req: Request<GetUserRequestParams>,
+    res: Response<DeleteUserResponse | ErrorResponse>
+  ) => {
+    try {
+      /** getUserByIdMiddleware で取得したユーザー情報 */
+      const requestedUser = req.requestedUser;
+
+      // Prismaの削除操作
+      await prisma.user.delete({
+        where: { id: requestedUser.id },
+      });
+
+      return res.status(204).json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error(error);
+      // Prismaの削除対象レコードが見つからないエラーはgetUserByIdMiddlewareでハンドリング済み
+      res.status(500).json({ message: "Failed to delete user" });
     }
   }
 );
